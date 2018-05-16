@@ -1,0 +1,24 @@
+----------------------------------------------------
+Record Time: 2018-05-16 00:24:42.956055
+Precision: 0.660 
+Recall: 0.525 
+F1 score: 0.584 
+Accuracy: 0.706 
+ROC AUC: 0.674 
+Log Loss: 10.154 
+Proportion of Positive Labels: 0.394 
+Number of Observations: 10000 
+Threshold 0.500 
+Note:
+----------------------------------------------------
+Record Time: 2018-05-16 01:09:50.682386
+Precision: 0.656 
+Recall: 0.514 
+F1 score: 0.576 
+Accuracy: 0.704 
+ROC AUC: 0.670 
+Log Loss: 10.241 
+Proportion of Positive Labels: 0.393 
+Number of Observations: 10000 
+Threshold 0.500 
+Note:
