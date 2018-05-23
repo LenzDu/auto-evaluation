@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
+import scipy as sp
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import itertools
 from datetime import datetime
+import warnings
 
 def plotting(plot_func):
 	'''
@@ -21,8 +23,8 @@ def plotting(plot_func):
 			plt.show()
 	return wrapper
 
-class Evaluator(object):
-	'''Super class of all evaluators'''
+class BaseEvaluator(object):
+	'''Base class of all evaluators'''
 	def __init__(self):
 		pass
 
@@ -30,17 +32,21 @@ class Evaluator(object):
 		pass
 
 	def report(self):
+		print(self.summary())
+		self.aggregate_plots()
+
+	def aggregate_plots(self):
 		pass
 
 	def summary(self):
 		pass
 	
 	def record(self, filename, note='', append=True):
-		# record the performance into the log file
-		if append:
-			f = open(filename, 'a')
-		else:
-			f = open(filename, 'w')
+		"""
+		record the performance into the log file
+		"""
+		f = open(filename, 'a') if append else  open(filename, 'w')
+		
 		f.write('----------------------------------------------------\n')
 		f.write('Record Time: ' + str(datetime.now()) + '\n')
 		# f.write('Training Label: '+training_label+', Valid Label: '+valid_label+', model: '+model+'\n')
@@ -50,29 +56,69 @@ class Evaluator(object):
 		print('Evaluation successfully saved in file "%s"' % filename)
 
 	
-class BinaryClassEvaluator(Evaluator):
-	def __init__(self, Ytrue, Yfit, threshold=None, ratio=1):
-		self.fit(Ytrue, Yfit, threshold, ratio)
+class BinaryClassEvaluator(BaseEvaluator):
+	def __init__(self, Ytrue, Yfit, threshold=0.5):
+		self.fit(Ytrue, Yfit, threshold=threshold)
 
-	def fit(self, Ytrue, Yfit, threshold, ratio=1):
+	def fit(self, Ytrue, Yfit, threshold=0.5):
+		# error handling
+		def check_type(Y):
+			if not isinstance(Y, np.ndarray):
+				if isinstance(Y, list):
+					Y = np.array(Y)
+				else:
+					raise TypeError('Ytrue and Yfit should be numpy array or list')
+			return Y
+		Ytrue = check_type(Ytrue)
+		Yfit = check_type(Yfit)
+
+		if Ytrue.ndim != 1 or Yfit.ndim != 1:
+			raise ValueError('Dimension of Ytrue and Yfit should be 1')
+		if len(Ytrue) != len(Yfit):
+			raise ValueError('Length of Ytrue and Yfit should be equal')
+		if Yfit.min() < 0 or Yfit.max() > 1:
+			raise ValueError('Values in Yfit should be between 0 and 1')
+		if set(Ytrue) != {0, 1}:
+			raise ValueError('Values in Ytrue should be 0 or 1')
+		if Yfit[0] in {0, 1} and set(Yfit) == {0, 1}:  # first condition to save time for most cases
+			warnings.warn('Yfit should be soft predictions (probabilities) rather than hard predictions (0 and 1). \
+						   Most metrics and visualizations are not meaningful with hard predictions.')
+
+		# fit data
 		self.Ytrue = Ytrue
 		self.Yfit = Yfit
 		self.baseline = Ytrue.mean()
-		self.ratio = ratio
-		if threshold is not None:
-			self.threshold = threshold
+		self.best_threshold = np.percentile(Yfit, 100-(self.baseline*100)) # TODO: find best thresholds
+		if threshold == 'best':
+			self.threshold = self.best_threshold
 		else:
-			self.threshold = np.percentile(Yfit, 100-(self.baseline*self.ratio*100))
+			self.threshold = threshold
 		self.YfitBinary = (Yfit>=self.threshold).astype('int')
 
 	def report(self):
-		plt.style.use('seaborn')
 		print(self.summary())
-		fig, axes = plt.subplots(2, 2, figsize=(12, 12))
+		# print(self.get_thresholds_table())
+		self.aggregate_plots()
+		
+	def set_threshold(self, threshold):
+		'''
+		Reset threshold. 
+		'''
+		if threshold == 'best':
+			self.threshold = self.best_threshold
+		else:
+			self.threshold = threshold
+		self.YfitBinary = (Yfit>=self.threshold).astype('int')
+
+	def aggregate_plots(self):
+		# TODO: sample if dataset is too large
+		plt.style.use('seaborn')
+		fig, axes = plt.subplots(2, 2, figsize=(10, 10))
 		self.p_r_curve(axes.flat[0])
 		self.roc_curve(axes.flat[1])
 		self.stacked_hist(axes.flat[2])
-		self.plot_confusion_matrix(axes.flat[3], normalize=True)
+		# self.plot_confusion_matrix(axes.flat[3], normalize=True)
+		self.plot_threshold_trend(axes.flat[3])
 		plt.show();
 
 	@plotting
@@ -100,7 +146,7 @@ class BinaryClassEvaluator(Evaluator):
 		ax.set_ylabel('true positive')
 
 	@plotting
-	def plot_confusion_matrix(self, ax, normalize=False):
+	def plot_confusion_matrix(self, ax=None, normalize=False):
 		cm = metrics.confusion_matrix(self.Ytrue, self.YfitBinary)
 		if normalize:
 			cm = cm / cm.sum(axis=1)[:, None]
@@ -130,6 +176,12 @@ class BinaryClassEvaluator(Evaluator):
 		ax.set_xlabel('Probability')
 		ax.set_ylabel('Number of Users')
 
+		Yfit_negative =self.Yfit[self.Ytrue == 0]
+		Yfit_positve = self.Yfit[self.Ytrue == 1]
+		ax.hist([Yfit_negative, Yfit_positve], bins=100, stacked=True)
+		ax.legend(['Negative Label', 'Positive Label'])
+		ax.axvline(x=self.threshold, ls='--', alpha=0.8)
+
 	@plotting
 	def stacked_hist(self, ax=None):
 		Yfit_negative =self.Yfit[self.Ytrue == 0]
@@ -138,24 +190,67 @@ class BinaryClassEvaluator(Evaluator):
 		ax.legend(['Negative Label', 'Positive Label'])
 		ax.axvline(x=self.threshold, ls='--', alpha=0.8)
 
-	def segment(self, n_segments=4, proportions=[0.95, 0.7, 0.3], is_valid=True, return_cutpoints=False):
-		cut_points = [np.percentile(self.Yfit, 100*i) for i in proportions]
-		p_group = self.Yfit>=cut_points[0]
-		lp_group = (self.Yfit<cut_points[0]) & (self.Yfit>=cut_points[1])
-		ln_group = (self.Yfit<cut_points[1]) & (self.Yfit>=cut_points[2])
-		n_group = self.Yfit<cut_points[2]
+	def segment(self, n_segments=4, proportions=[0.4, 0.3, 0.25, 0.05], return_cutpoints=False, is_valid=True):
+		# TODO: auto segmentation
+		# TODO: change to percentage
+
+		if sum(proportions) != 1:
+			raise ValueError('Proportions should add up to 1')
+
+		cum_proportion = np.array(proportions).cumsum()
+		cut_points = [np.percentile(self.Yfit, 100*i) for i in cum_proportion]
+		groups = []
+		for i in range(n_segments):
+			if i == 0:
+				groups.append(self.Yfit<=cut_points[0])
+			else:
+				groups.append((self.Yfit>=cut_points[i-1]) & (self.Yfit<=cut_points[i]))
+
 		segment_df = pd.DataFrame()
-		segment_df['segment'] = ['Positive', 'Likely positive', 'Liekly negative', 'Negative']
-		segment_df['volume'] = [EA_group.sum(), highEA_group.sum(), rareEA_group.sum(), nonEA_group.sum()]
-		segment_df['User Proportion'] = np.round(segment_df['volume']/segment_df['volume'].sum(), 3)
+		segment_df['Segment'] = range(n_segments)
+		segment_df['Volume'] = [group.sum() for group in groups]
+		segment_df['Proportion'] = np.round(segment_df['Volume']/segment_df['Volume'].sum(), 4)
 		if is_valid:
-			segment_df['EA Converter'] = self.Ytrue[EA_group].sum(), self.Ytrue[highEA_group].sum(), self.Ytrue[rareEA_group].sum(), self.Ytrue[nonEA_group].sum()
-			segment_df['EA Percentage'] = np.round(segment_df['EA Converter']/segment_df['EA Converter'].sum(), 4)
-			segment_df['Conversion Rate'] = np.round(segment_df['EA Converter']/segment_df['volume'], 4)
+			segment_df['# of True Labels'] = [self.Ytrue[group].sum() for group in groups]
+			segment_df['Precision'] = np.round(segment_df['# of True Labels']/segment_df['Volume'], 4)
+			segment_df['Coverage (Recall)'] = np.round(segment_df['# of True Labels']/segment_df['# of True Labels'].sum(), 4)
 
 		if return_cutpoints:
 			return segment_df, cut_points
 		return segment_df
+
+	def get_thresholds_table(self, thresholds=np.arange(0.1, 1, 0.1)):
+		thresholds = list(thresholds)
+		thresholds.append(self.best_threshold)
+		YfitBin_list = [(self.Yfit>=threshold).astype('int') for threshold in thresholds]
+		accuracys = [metrics.accuracy_score(self.Ytrue, YfitBin) for YfitBin in YfitBin_list]
+		precisions = [metrics.precision_score(self.Ytrue, YfitBin) for YfitBin in YfitBin_list]
+		recalls = [metrics.recall_score(self.Ytrue, YfitBin) for YfitBin in YfitBin_list]
+		f1s = [metrics.f1_score(self.Ytrue, YfitBin) for YfitBin in YfitBin_list]
+
+		thresholds_table = pd.DataFrame({'Threshold': thresholds, 'Accuracy': accuracys, 'Precision': precisions,
+										 'Recall': recalls, 'F1 Score': f1s})
+
+		return thresholds_table
+
+	@plotting
+	def plot_threshold_trend(self, ax=None, thresholds=np.arange(0.1, 1, 0.1)):
+		thresholds = list(thresholds)
+		# thresholds.append(self.best_threshold)
+		YfitBin_list = [(self.Yfit>=threshold).astype('int') for threshold in thresholds]
+		accuracys = [metrics.accuracy_score(self.Ytrue, YfitBin) for YfitBin in YfitBin_list]
+		precisions = [metrics.precision_score(self.Ytrue, YfitBin) for YfitBin in YfitBin_list]
+		recalls = [metrics.recall_score(self.Ytrue, YfitBin) for YfitBin in YfitBin_list]
+		f1s = [metrics.f1_score(self.Ytrue, YfitBin) for YfitBin in YfitBin_list]
+		
+		ax.plot(thresholds, accuracys)
+		ax.plot(thresholds, precisions)
+		ax.plot(thresholds, recalls)
+		ax.plot(thresholds, f1s)
+		ax.legend(['Accuracy', 'Precision', 'Recall', 'F1 score'])
+		ax.set_xlabel('Threshold')
+		ax.set_ylabel('Score')
+		ax.set_title('Metric Scores by Threshold')
 
 	def summary(self):
 		summary_str = ''
@@ -163,18 +258,88 @@ class BinaryClassEvaluator(Evaluator):
 		summary_str += 'Recall: %.3f \n' % metrics.recall_score(self.Ytrue, self.YfitBinary)
 		summary_str += 'F1 score: %.3f \n' % metrics.f1_score(self.Ytrue, self.YfitBinary)
 		summary_str += 'Accuracy: %.3f \n' % metrics.accuracy_score(self.Ytrue, self.YfitBinary)
-		summary_str += 'ROC AUC: %.3f \n' % metrics.roc_auc_score(self.Ytrue, self.YfitBinary)
-		summary_str += 'Log Loss: %.3f \n' % metrics.log_loss(self.Ytrue, self.YfitBinary)
+		summary_str += 'ROC AUC: %.3f \n' % metrics.roc_auc_score(self.Ytrue, self.Yfit)
+		summary_str += 'Log Loss: %.3f \n' % metrics.log_loss(self.Ytrue, self.Yfit)
 		summary_str += 'Proportion of Positive Labels: %.3f \n' % self.Ytrue.mean()
 		summary_str += 'Number of Observations: %d \n' % self.Ytrue.shape[0]
 		summary_str += 'Threshold %.3f \n' % self.threshold
 		
 		return summary_str
 
-class MultiClassEvaluator(Evaluator):
+
+class MultiClassEvaluator(BaseEvaluator):
+	def __init__(self, Ytrue, Yfit, class_names=None):
+		self.fit(Ytrue, Yfit, class_names=class_names)
+
+	def fit(self, Ytrue, Yfit, class_names=None):
+		self.Ytrue = Ytrue
+		self.Yfit = Yfit
+		self.n_class = Yfit.shape[1]
+		self.class_names = class_names
+		self.YfitBinary = Yfit.argmax(axis=1)
+
+	def summary(self):
+		summary_str = ''
+		summary_str += 'Accuracy: %.3f \n' % metrics.accuracy_score(self.Ytrue, self.YfitBinary)
+		summary_str += 'Log Loss: %.3f \n' % metrics.log_loss(self.Ytrue, self.Yfit)
+		summary_str += 'Proportion of Labels: %.3f \n' % self.Ytrue.mean()
+		summary_str += 'Number of Observations: %d \n' % self.Ytrue.shape[0]
+		return summary_str
+
+class RegressionEvaluator(BaseEvaluator):
 	def __init__(self, Ytrue, Yfit):
 		self.fit(Ytrue, Yfit)
 
 	def fit(self, Ytrue, Yfit):
 		self.Ytrue = Ytrue
 		self.Yfit = Yfit
+		
+	def summary(self):
+		summary_str = ''
+		summary_str += 'MSE: %.3f \n' % metrics.mean_squared_error(self.Ytrue, self.Yfit)
+		# summary_str += 'SSE: %.3f \n' % sum((self.Ytrue - self.Ytrue.mean()) ** 2)
+		summary_str += 'R^2: %.3f \n' % metrics.r2_score(self.Ytrue, self.Yfit)
+		summary_str += 'MAE: %.3f \n' % metrics.mean_absolute_error(self.Ytrue, self.Yfit)
+		summary_str += 'Response Mean: %.3f \n' % self.Ytrue.mean()
+		summary_str += 'Number of Observations: %d \n' % self.Ytrue.shape[0]
+
+		return summary_str
+
+	def aggregate_plots(self):
+		plt.style.use('seaborn')
+		fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+		self.plot_response_vs_predictions(axes.flat[0])
+		self.plot_e_vs_predictions(axes.flat[1])
+		self.qq_plot(axes.flat[2])
+		self.plot_distributions(axes.flat[3])
+		plt.show();	
+
+	@plotting
+	def plot_response_vs_predictions(self, ax=None):
+		ax.scatter(self.Yfit, self.Ytrue, s=5)
+		ax.set_title('Response vs Predictions')
+		ax.set_xlabel('Predictions')
+		ax.set_ylabel('Response')
+		
+	@plotting
+	def plot_e_vs_predictions(self, ax=None):
+		ax.scatter(self.Yfit, self.Ytrue - self.Yfit, s=5)
+		ax.set_title('Residuals vs Predictions')
+		ax.set_xlabel('Predictions')
+		ax.set_ylabel('Residuals')
+		ax.axhline(y=0, ls='--', alpha=0.8)
+
+	@plotting
+	def qq_plot(self, ax=None):
+		e = self.Ytrue - self.Yfit
+		osm, osr = sp.stats.probplot(e, fit=False)
+		ax.scatter(osm, osr, s=5)
+		ax.plot([-4, 4], [-4, 4], color='navy', linestyle='--')
+		ax.set_title('QQ Plot')
+
+	@plotting
+	def plot_distributions(self, ax=None):
+		ax.hist(self.Ytrue, bins=50, density=True, alpha=0.5)
+		ax.hist(self.Yfit, bins=50, density=True, alpha=0.5)
+		ax.legend(['Response', 'Prediction'])
+		ax.set_title('Distributions')
