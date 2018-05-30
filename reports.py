@@ -1,8 +1,7 @@
 """Generating Reports"""
 import pandas as pd
-import auto_evaluation.templates as templates
+import tp
 
 
-def to_html(sample, stats):
-    
-    return templates.templates('base').render({})
+def to_html(stats):
+    return tp.template('base').render(values=stats)

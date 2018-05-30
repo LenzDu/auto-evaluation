@@ -7,6 +7,8 @@ import itertools
 from datetime import datetime
 import warnings
 
+from reports import to_html
+
 def plotting(plot_func):
 	'''
 	A decorator to enable plotting individually for plotting functions.
@@ -68,6 +70,8 @@ class BinaryClassEvaluator(BaseEvaluator):
 	def __init__(self, Ytrue, Yfit, threshold=0.5):
 		self.fit(Ytrue, Yfit, threshold=threshold)
 		self.get_stats()
+		self.html = to_html(self.stats)
+		print(self.html)
 
 	def fit(self, Ytrue, Yfit, threshold=0.5):
 		"""
