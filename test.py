@@ -2,9 +2,9 @@ import numpy as np
 from evaluation import BinaryClassEvaluator, RegressionEvaluator
 from sklearn.linear_model import LogisticRegression, LinearRegression
 
-sample_size = 10000000
+sample_size = 100000
 np.random.seed(42)
-
+"""
 # classification
 y = np.random.choice([0, 1], sample_size, p = [0.7, 0.3])
 x = y + np.random.randn(sample_size)
@@ -34,4 +34,3 @@ yfit = m.predict(x)
 
 e = RegressionEvaluator(y, yfit)
 e.report()
-"""

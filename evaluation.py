@@ -23,6 +23,14 @@ def plotting(plot_func):
 			plt.show()
 	return wrapper
 
+def check_type(Y):
+	if not isinstance(Y, np.ndarray):
+		if isinstance(Y, list):
+			Y = np.array(Y)
+		else:
+			raise TypeError('Ytrue and Yfit should be numpy array or list')
+	return Y
+
 class BaseEvaluator(object):
 	'''Base class of all evaluators'''
 	def __init__(self):
@@ -61,14 +69,10 @@ class BinaryClassEvaluator(BaseEvaluator):
 		self.fit(Ytrue, Yfit, threshold=threshold)
 
 	def fit(self, Ytrue, Yfit, threshold=0.5):
+		"""
+		Fit the input data
+		"""
 		# error handling
-		def check_type(Y):
-			if not isinstance(Y, np.ndarray):
-				if isinstance(Y, list):
-					Y = np.array(Y)
-				else:
-					raise TypeError('Ytrue and Yfit should be numpy array or list')
-			return Y
 		Ytrue = check_type(Ytrue)
 		Yfit = check_type(Yfit)
 
@@ -96,14 +100,17 @@ class BinaryClassEvaluator(BaseEvaluator):
 		self.YfitBinary = (Yfit>=self.threshold).astype('int')
 
 	def report(self):
+		"""
+		Provide a report for the evaluation
+		"""
 		print(self.summary())
 		# print(self.get_thresholds_table())
 		self.aggregate_plots()
 		
 	def set_threshold(self, threshold):
-		'''
-		Reset threshold. 
-		'''
+		"""
+		Reset threshold.
+		"""
 		if threshold == 'best':
 			self.threshold = self.best_threshold
 		else:
@@ -111,6 +118,9 @@ class BinaryClassEvaluator(BaseEvaluator):
 		self.YfitBinary = (Yfit>=self.threshold).astype('int')
 
 	def aggregate_plots(self):
+		"""
+		Aggregate all plots together.
+		"""
 		# TODO: sample if dataset is too large
 		plt.style.use('seaborn')
 		fig, axes = plt.subplots(2, 2, figsize=(10, 10))
@@ -123,6 +133,9 @@ class BinaryClassEvaluator(BaseEvaluator):
 
 	@plotting
 	def p_r_curve(self, ax=None):
+		"""
+		Plot the precision-recall curve.
+		"""
 		precision, recall, _ = metrics.precision_recall_curve(self.Ytrue, self.Yfit)
 		ax.step(recall, precision, color='b', alpha=0.8,
 		         where='post')
@@ -138,6 +151,9 @@ class BinaryClassEvaluator(BaseEvaluator):
 
 	@plotting
 	def roc_curve(self, ax=None):
+		"""
+		Plot the ROC curve.
+		"""
 		fpr, tpr, _ = metrics.roc_curve(self.Ytrue, self.Yfit)
 		ax.plot(fpr, tpr, color='darkorange')
 		ax.plot([0, 1], [0, 1], color='navy', linestyle='--')
@@ -147,6 +163,9 @@ class BinaryClassEvaluator(BaseEvaluator):
 
 	@plotting
 	def plot_confusion_matrix(self, ax=None, normalize=False):
+		"""
+		Plot the confusion matrix.
+		"""
 		cm = metrics.confusion_matrix(self.Ytrue, self.YfitBinary)
 		if normalize:
 			cm = cm / cm.sum(axis=1)[:, None]
@@ -169,8 +188,11 @@ class BinaryClassEvaluator(BaseEvaluator):
 					color="white" if cm[i, j] > t else "black")
 
 	@plotting
-	def hist(self, ax=None):
-		ax.hist(self.Yfit, bins=50)
+	def hist(self, ax=None, bins=100):
+		"""
+		Plot the distribution of predictions
+		"""
+		ax.hist(self.Yfit, bins=bins)
 		ax.axvline(x=self.threshold, ls='--', alpha=0.8)
 		ax.set_title('Distribution of Model Predictions')
 		ax.set_xlabel('Probability')
@@ -183,14 +205,25 @@ class BinaryClassEvaluator(BaseEvaluator):
 		ax.axvline(x=self.threshold, ls='--', alpha=0.8)
 
 	@plotting
-	def stacked_hist(self, ax=None):
+	def stacked_hist(self, ax=None, bins=100):
+		"""
+		Plot the distribution of predictions, stacked on their true labels.
+		"""
 		Yfit_negative =self.Yfit[self.Ytrue == 0]
 		Yfit_positve = self.Yfit[self.Ytrue == 1]
-		ax.hist([Yfit_negative, Yfit_positve], bins=100, stacked=True)
+		ax.hist([Yfit_negative, Yfit_positve], bins=bins, stacked=True)
 		ax.legend(['Negative Label', 'Positive Label'])
-		ax.axvline(x=self.threshold, ls='--', alpha=0.8)
+		ax.axvline(x=self.threshold, ls='--', alpha=0.8) # draw threshold
 
 	def segment(self, n_segments=4, proportions=[0.4, 0.3, 0.25, 0.05], return_cutpoints=False, is_valid=True):
+		"""
+		Return a segmentation of the predictions and metrics for each segment
+
+		Returns
+		-------
+		segment_df : DataFrame
+		cut_points : list
+		"""
 		# TODO: auto segmentation
 		# TODO: change to percentage
 
@@ -220,6 +253,9 @@ class BinaryClassEvaluator(BaseEvaluator):
 		return segment_df
 
 	def get_thresholds_table(self, thresholds=np.arange(0.1, 1, 0.1)):
+		"""
+		Return a table of accuracy, precision, recall and f1 score on different thresholds.
+		"""
 		thresholds = list(thresholds)
 		thresholds.append(self.best_threshold)
 		YfitBin_list = [(self.Yfit>=threshold).astype('int') for threshold in thresholds]
@@ -235,6 +271,9 @@ class BinaryClassEvaluator(BaseEvaluator):
 
 	@plotting
 	def plot_threshold_trend(self, ax=None, thresholds=np.arange(0.1, 1, 0.1)):
+		"""
+		plot the trend of accuracy, precision, recall and f1 score on different thresholds.
+		"""
 		thresholds = list(thresholds)
 		# thresholds.append(self.best_threshold)
 		YfitBin_list = [(self.Yfit>=threshold).astype('int') for threshold in thresholds]
@@ -253,6 +292,13 @@ class BinaryClassEvaluator(BaseEvaluator):
 		ax.set_title('Metric Scores by Threshold')
 
 	def summary(self):
+		"""
+		Return most common metrics and other summary information for the evaluation
+
+		Returns:
+		-------
+		string
+		"""
 		summary_str = ''
 		summary_str += 'Precision: %.3f \n' % metrics.precision_score(self.Ytrue, self.YfitBinary)
 		summary_str += 'Recall: %.3f \n' % metrics.recall_score(self.Ytrue, self.YfitBinary)
@@ -291,8 +337,18 @@ class RegressionEvaluator(BaseEvaluator):
 		self.fit(Ytrue, Yfit)
 
 	def fit(self, Ytrue, Yfit):
+		# error handling
+		Ytrue = check_type(Ytrue)
+		Yfit = check_type(Yfit)
+
+		if Ytrue.ndim != 1 or Yfit.ndim != 1:
+			raise ValueError('Dimension of Ytrue and Yfit should be 1')
+		if len(Ytrue) != len(Yfit):
+			raise ValueError('Length of Ytrue and Yfit should be equal')
+
 		self.Ytrue = Ytrue
 		self.Yfit = Yfit
+		self.e = self.Ytrue - self.Yfit
 		
 	def summary(self):
 		summary_str = ''
@@ -323,7 +379,7 @@ class RegressionEvaluator(BaseEvaluator):
 		
 	@plotting
 	def plot_e_vs_predictions(self, ax=None):
-		ax.scatter(self.Yfit, self.Ytrue - self.Yfit, s=5)
+		ax.scatter(self.Yfit, self.e, s=5)
 		ax.set_title('Residuals vs Predictions')
 		ax.set_xlabel('Predictions')
 		ax.set_ylabel('Residuals')
@@ -331,8 +387,7 @@ class RegressionEvaluator(BaseEvaluator):
 
 	@plotting
 	def qq_plot(self, ax=None):
-		e = self.Ytrue - self.Yfit
-		osm, osr = sp.stats.probplot(e, fit=False)
+		osm, osr = sp.stats.probplot(self.e, fit=False)
 		ax.scatter(osm, osr, s=5)
 		ax.plot([-4, 4], [-4, 4], color='navy', linestyle='--')
 		ax.set_title('QQ Plot')
