@@ -67,6 +67,7 @@ class BaseEvaluator(object):
 class BinaryClassEvaluator(BaseEvaluator):
 	def __init__(self, Ytrue, Yfit, threshold=0.5):
 		self.fit(Ytrue, Yfit, threshold=threshold)
+		self.get_stats()
 
 	def fit(self, Ytrue, Yfit, threshold=0.5):
 		"""
@@ -311,6 +312,19 @@ class BinaryClassEvaluator(BaseEvaluator):
 		summary_str += 'Threshold %.3f \n' % self.threshold
 		
 		return summary_str
+
+	def get_stats(self):
+		stats = {}
+		stats['precision'] = metrics.precision_score(self.Ytrue, self.YfitBinary)
+		stats['recall'] = metrics.recall_score(self.Ytrue, self.YfitBinary)
+		stats['f1'] = metrics.f1_score(self.Ytrue, self.YfitBinary)
+		stats['accuracy'] = metrics.accuracy_score(self.Ytrue, self.YfitBinary)
+		stats['rocauc'] = metrics.roc_auc_score(self.Ytrue, self.YfitBinary)
+		stats['logloss'] = metrics.log_loss(self.Ytrue, self.YfitBinary)
+		stats['proportion'] = self.Ytrue.mean()
+		stats['n'] = self.Ytrue.shape[0]
+		stats['threshold'] = self.threshold
+		self.stats = stats
 
 
 class MultiClassEvaluator(BaseEvaluator):
