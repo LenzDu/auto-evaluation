@@ -1,6 +1,7 @@
 """Create a jinja2 template environment in order to load templates for our application"""
 
 from jinja2 import Environment, PackageLoader
+import os
 
 # initializing jinja2
 pl = PackageLoader('auto_evaluation', 'templates')  # the loader will look up the "templates" folder in your "auto_evaluation" package
@@ -22,4 +23,8 @@ def template(template_name):
     -------
     the jinja2 template
     """
-    return jinja2_env.get_template(templates[template_name])    # get_template(): return the loaded template
+
+    # TODO: Fix jinja2 get_template "NotImplementedError"
+    # return jinja2_env.get_template(templates[template_name])    # get_template(): return the loaded template
+    # Workaround
+    return jinja2_env.from_string(open(os.path.join(os.path.dirname(__file__), 'templates', templates[template_name])).read())
