@@ -7,7 +7,7 @@ import itertools
 from datetime import datetime
 import warnings
 
-from reports import to_html
+from .reports import to_html
 
 def plotting(plot_func):
 	'''
