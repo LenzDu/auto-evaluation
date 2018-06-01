@@ -7,6 +7,7 @@ import itertools
 from datetime import datetime
 import warnings
 
+import pandas_profiling.templates as templates
 from .reports import to_html
 
 def plotting(plot_func):
@@ -67,11 +68,15 @@ class BaseEvaluator(object):
 
 	
 class BinaryClassEvaluator(BaseEvaluator):
+	html = ''
 	def __init__(self, Ytrue, Yfit, threshold=0.5):
 		self.fit(Ytrue, Yfit, threshold=threshold)
 		self.get_stats()
 		self.html = to_html(self.stats)
-		print(self.html)
+
+	def _repr_html_(self):
+		#print(self.html)
+		return self.html
 
 	def fit(self, Ytrue, Yfit, threshold=0.5):
 		"""
