@@ -7,8 +7,9 @@ import itertools
 from datetime import datetime
 import warnings
 
-import pandas_profiling.templates as templates
+import auto_evaluation.templates as templates
 from .reports import to_html
+from auto_evaluation.plot import to_string
 
 def plotting(plot_func):
 	'''
@@ -69,9 +70,11 @@ class BaseEvaluator(object):
 	
 class BinaryClassEvaluator(BaseEvaluator):
 	html = ''
+	stats = {}
 	def __init__(self, Ytrue, Yfit, threshold=0.5):
 		self.fit(Ytrue, Yfit, threshold=threshold)
-		self.get_stats()
+		#print(self.stats['graphs'])
+		self.report()
 		self.html = to_html(self.stats)
 
 	def _repr_html_(self):
@@ -113,6 +116,7 @@ class BinaryClassEvaluator(BaseEvaluator):
 		"""
 		Provide a report for the evaluation
 		"""
+		self.get_stats()
 		print(self.summary())
 		# print(self.get_thresholds_table())
 		self.aggregate_plots()
@@ -139,7 +143,10 @@ class BinaryClassEvaluator(BaseEvaluator):
 		self.stacked_hist(axes.flat[2])
 		# self.plot_confusion_matrix(axes.flat[3], normalize=True)
 		self.plot_threshold_trend(axes.flat[3])
-		plt.show();
+		plt.show()
+		self.stats['graphs']=to_string(fig)
+		#print(self.stats['graphs'])
+
 
 	@plotting
 	def p_r_curve(self, ax=None):
