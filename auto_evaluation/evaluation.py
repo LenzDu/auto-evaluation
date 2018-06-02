@@ -236,10 +236,9 @@ class BinaryClassEvaluator(BaseEvaluator):
 		"""
 		Return a segmentation of the predictions and metrics for each segment
 
-		Returns
-		-------
-		segment_df : DataFrame
-		cut_points : list
+		Returns:
+			segment_df: DataFrame
+			cut_points: list
 		"""
 		# TODO: auto segmentation
 		# TODO: change to percentage
@@ -313,8 +312,7 @@ class BinaryClassEvaluator(BaseEvaluator):
 		Return most common metrics and other summary information for the evaluation
 
 		Returns:
-		-------
-		string
+			String.
 		"""
 		summary_str = ''
 		summary_str += 'Precision: %.3f \n' % metrics.precision_score(self.Ytrue, self.YfitBinary)
@@ -383,6 +381,7 @@ class RegressionEvaluator(BaseEvaluator):
 	def summary(self):
 		summary_str = ''
 		summary_str += 'MSE: %.3f \n' % metrics.mean_squared_error(self.Ytrue, self.Yfit)
+		summary_str += 'RMSE: %.3f \n' % np.sqrt(metrics.mean_squared_error(self.Ytrue, self.Yfit))
 		# summary_str += 'SSE: %.3f \n' % sum((self.Ytrue - self.Ytrue.mean()) ** 2)
 		summary_str += 'R^2: %.3f \n' % metrics.r2_score(self.Ytrue, self.Yfit)
 		summary_str += 'MAE: %.3f \n' % metrics.mean_absolute_error(self.Ytrue, self.Yfit)
