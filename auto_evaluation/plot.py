@@ -3,6 +3,8 @@ import numpy as np
 import base64
 from io import BytesIO
 import urllib
+import matplotlib.pyplot as plt
+
 
 """
 Ploting results
@@ -12,7 +14,7 @@ Encoding Matplotlib figures into base64 String
 
 
 def plotting(plot_func):
-    '''
+	'''
 	A decorator to enable plotting individually for plotting functions.
 	Keep ax=None for plotting functions to plot individually.
 	'''
