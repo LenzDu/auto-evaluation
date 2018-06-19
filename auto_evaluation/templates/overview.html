@@ -1,0 +1,83 @@
+<div>
+    <table>
+        <tbody>
+            <tr>
+                <th>
+                    Number of Observations
+                </th>    
+                <td>
+                        {{ values['n'] }}
+                </td>
+            </tr>
+            <tr>
+                <th>
+                    Precision
+                </th>    
+                <td>
+                    {{ values['precision'] }}
+                </td>
+            </tr>
+            <tr>
+                    <th>
+                        Recall
+                    </th>    
+                    <td>
+                        {{ values['recall'] }}
+                    </td>
+            </tr>
+            <tr>
+                    <th>
+                        F1 score
+                    </th>    
+                    <td>
+                        {{ values['f1'] }}
+                    </td>
+            </tr>
+            <tr>
+                <th>
+                    Accuracy
+                </th>    
+                <td>
+                    {{ values['accuracy'] }}
+                </td>
+            </tr>
+            <tr>
+                    <th>
+                        ROC AUC
+                    </th>    
+                    <td>
+                        {{ values['rocauc'] }}
+                    </td>
+            </tr>
+            <tr>
+                    <th>
+                        Log Loss
+                    </th>    
+                    <td>
+                        {{ values['logloss'] }}
+                    </td>
+            </tr>
+            <tr>
+                    <th>
+                        Proportion of Positive Labels
+                    </th>    
+                    <td>
+                        {{ values['proportion'] }}
+                    </td>
+            </tr>
+            <tr>
+                    <th>
+                        Threshold
+                    </th>    
+                    <td>
+                        {{ values['threshold'] }}
+                    </td>
+                </tr>
+        </tbody>
+    </table>
+    
+</div>
+<div>
+    <img src="{{ values['graphs']}}">
+</div>
+

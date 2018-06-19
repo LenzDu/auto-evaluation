@@ -10,7 +10,9 @@ jinja2_env = Environment(lstrip_blocks=True, trim_blocks=True, loader=pl)
 # trim_blocks: the first newline after a block is removed (block, not variable tag!).
 
 # Mapping between template name and file
-templates = {'base':'base.html'}
+templates = {'base':'base.html',
+            'overview':'overview.html'
+            }
 
 def template(template_name):
     """Return an jinja2 template that is ready to be renderred
