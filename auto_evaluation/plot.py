@@ -7,11 +7,9 @@ import matplotlib.pyplot as plt
 
 
 """
-Ploting results
+Plotting method
 Encoding Matplotlib figures into base64 String
 """
-# TODO: Move all plotting function here from evaluation.py
-
 
 def plotting(plot_func):
 	'''
