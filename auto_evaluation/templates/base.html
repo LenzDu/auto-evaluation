@@ -1,6 +1,31 @@
 <meta charset="UTF-8">
 
-<style>
+<style> 
+    .tab-folder > .tab-content:target ~ .tab-content:last-child, .tab-folder > .tab-content {
+        display: none;
+    }
+    .tab-folder > :last-child, .tab-folder > .tab-content:target {
+        display: block;
+    }
+    .menu {
+        overflow: hidden;
+        border: 1px solid #ccc;
+        background-color: #f1f1f1;
+    }
+    .menu a {    
+        display: inline-block;
+        color: #666;
+        text-align: center;
+        padding: 14px;
+       
+    }
+    .menu a:link {
+        text-decoration: none;
+    }
+    .menu a:hover {
+        background-color: #ddd;
+        text-decoration: none;
+    }
 </style>
 
 <div container auto-evaluation>
@@ -12,6 +37,7 @@
     <div class="headerrow">
         <h1>Graphs</h1>
     </div>
+    {{ tabs_html }}
         
 </div>
 

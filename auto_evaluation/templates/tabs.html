@@ -1,0 +1,10 @@
+<div class="menu">
+    {% for key, value in values.items() %}
+    <a href="#{{key}}">{{key}}</a>
+    {% endfor %} 
+</div>
+<div class="tab-folder">
+    {% for key, value in values.items() %}
+    <div id="{{key}}" class="tab-content">{{value}}</div>
+    {% endfor %} 
+</div>

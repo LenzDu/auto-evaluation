@@ -11,7 +11,8 @@ jinja2_env = Environment(lstrip_blocks=True, trim_blocks=True, loader=pl)
 
 # Mapping between template name and file
 templates = {'base':'base.html',
-            'overview':'overview.html'
+            'overview':'overview.html',
+            'tabs':'tabs.html'
             }
 
 def template(template_name):
