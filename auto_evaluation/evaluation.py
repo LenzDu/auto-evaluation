@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import itertools
 from datetime import datetime
 import warnings
+from collections import Counter
 
 import auto_evaluation.templates as templates
 from .reports import to_html
@@ -146,7 +147,6 @@ class BinaryClassEvaluator(BaseEvaluator):
 		plt.show()
 		self.stats['graphs']=to_string(fig)
 		#print(self.stats['graphs'])
-
 
 	@plotting
 	def p_r_curve(self, ax=None):
@@ -347,7 +347,9 @@ class MultiClassEvaluator(BaseEvaluator):
 
 	def fit(self, Ytrue, Yfit, class_names=None):
 		self.Ytrue = Ytrue
+		self.Ytrue_dummy = pd.get_dummies(Ytrue)
 		self.Yfit = Yfit
+		self.Ypred = np.argmax(Yfit, axis=1)
 		self.n_class = Yfit.shape[1]
 		self.class_names = class_names
 		self.YfitBinary = Yfit.argmax(axis=1)
@@ -359,6 +361,78 @@ class MultiClassEvaluator(BaseEvaluator):
 		summary_str += 'Proportion of Labels: %.3f \n' % self.Ytrue.mean()
 		summary_str += 'Number of Observations: %d \n' % self.Ytrue.shape[0]
 		return summary_str
+
+	def aggregate_plots(self):
+		"""
+		Aggregate all plots together.
+		"""
+		# TODO: sample if dataset is too large
+		plt.style.use('seaborn')
+		fig, axes = plt.subplots(2, 2, figsize=(10, 10))
+		self.plot_confusion_matrix(axes.flat[0])
+		self.plot_classes_dist(axes.flat[1])
+		# self.stacked_hist(axes.flat[2])
+		# self.plot_confusion_matrix(axes.flat[3], normalize=True)
+		# self.plot_threshold_trend(axes.flat[3])
+		plt.show()
+		self.stats['graphs']=to_string(fig)
+		#print(self.stats['graphs'])	
+
+	@plotting
+	def plot_classes_dist(self, ax=None):
+		#TODO: to be optimized
+		Ytrue_counter = Counter(self.Ytrue)
+		Ypred_counter = Counter(self.Ypred)
+		x = range(self.n_class)
+		bar_width = 0.25
+		Ytrue_count = [Ytrue_counter[item] for item in x]
+		Ypred_count = [Ypred_counter[item] for item in x]
+		ax.bar(x, Ytrue_count, width=bar_width)
+		ax.bar([item+bar_width for item in x], Ypred_count, width=bar_width)
+		ax.legend(['True Label', 'Predicted Label'])
+		ax.set_title('Classes Counts of True and Predicted Labels')
+		ax.set_xlabel('Classes')
+		ax.set_ylabel('Count')
+		tick_marks = np.arange(self.n_class)
+		ax.set_xticks(tick_marks+bar_width/2)
+		if self.class_names is not None:
+			ax.set_xticklabels(self.class_names)
+		else:
+			ax.set_xticklabels(tick_marks)
+
+	@plotting
+	def plot_confusion_matrix(self, ax=None, normalize=False):
+		"""
+		Plot the confusion matrix.
+		"""
+		cm = metrics.confusion_matrix(self.Ytrue, self.Ypred)
+		if normalize:
+			cm = cm / cm.sum(axis=1)[:, None]
+
+		ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+		ax.set_title('Confusion Matrix')
+		tick_marks = np.arange(self.n_class)
+		ax.set_xticks(tick_marks)
+		ax.set_yticks(tick_marks)
+		if self.class_names is not None:
+			ax.set_xticklabels(self.class_names)
+			ax.set_yticklabels(self.class_names)
+		else:
+			ax.set_xticklabels(tick_marks)
+			ax.set_yticklabels(tick_marks)
+		ax.set_xlabel('Predicted Label')
+		ax.set_ylabel('True Label')
+		ax.grid(False)
+
+		fmt = '.2f' if normalize else 'd'
+		t = cm.max() / 2
+		for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+			ax.text(j, i, format(cm[i, j], fmt),
+					horizontalalignment="center",
+					color="white" if cm[i, j] > t else "black")
+
+	def get_stats_by_group(self):
+		pass
 
 class RegressionEvaluator(BaseEvaluator):
 	def __init__(self, Ytrue, Yfit):
@@ -390,6 +464,16 @@ class RegressionEvaluator(BaseEvaluator):
 
 		return summary_str
 
+	def get_stats(self):
+		stats = {}
+		stats['mse'] = metrics.mean_squared_error(self.Ytrue, self.Yfit)
+		stats['rmse'] = np.sqrt(metrics.mean_squared_error(self.Ytrue, self.Yfit))
+		stats['r2'] = metrics.r2_score(self.Ytrue, self.Yfit)
+		stats['mae'] = metrics.mean_absolute_error(self.Ytrue, self.Yfit)
+		stats['sample-mean'] = self.Ytrue.mean()
+		stats['n'] = self.Ytrue.shape[0]
+		self.stats = stats
+
 	def aggregate_plots(self):
 		plt.style.use('seaborn')
 		fig, axes = plt.subplots(2, 2, figsize=(10, 10))
@@ -398,6 +482,7 @@ class RegressionEvaluator(BaseEvaluator):
 		self.qq_plot(axes.flat[2])
 		self.plot_distributions(axes.flat[3])
 		plt.show();	
+		self.stats['graphs']=to_string(fig)
 
 	@plotting
 	def plot_response_vs_predictions(self, ax=None):
