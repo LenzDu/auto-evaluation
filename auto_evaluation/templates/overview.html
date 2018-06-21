@@ -1,78 +1,18 @@
 <div>
     <table>
         <tbody>
-            <tr>
-                <th>
-                    Number of Observations
-                </th>    
-                <td>
-                        {{ values['n'] }}
-                </td>
-            </tr>
-            <tr>
-                <th>
-                    Precision
-                </th>    
-                <td>
-                    {{ values['precision'] }}
-                </td>
-            </tr>
-            <tr>
+                {% for key, value in values.items() %}
+                {% if key != 'graphs' %}
+                <tr>
                     <th>
-                        Recall
-                    </th>    
+                        {{key}}
+                    </th>
                     <td>
-                        {{ values['recall'] }}
-                    </td>
-            </tr>
-            <tr>
-                    <th>
-                        F1 score
-                    </th>    
-                    <td>
-                        {{ values['f1'] }}
-                    </td>
-            </tr>
-            <tr>
-                <th>
-                    Accuracy
-                </th>    
-                <td>
-                    {{ values['accuracy'] }}
-                </td>
-            </tr>
-            <tr>
-                    <th>
-                        ROC AUC
-                    </th>    
-                    <td>
-                        {{ values['rocauc'] }}
-                    </td>
-            </tr>
-            <tr>
-                    <th>
-                        Log Loss
-                    </th>    
-                    <td>
-                        {{ values['logloss'] }}
-                    </td>
-            </tr>
-            <tr>
-                    <th>
-                        Proportion of Positive Labels
-                    </th>    
-                    <td>
-                        {{ values['proportion'] }}
-                    </td>
-            </tr>
-            <tr>
-                    <th>
-                        Threshold
-                    </th>    
-                    <td>
-                        {{ values['threshold'] }}
+                        {{value}}
                     </td>
                 </tr>
+                {% endif %}
+                {% endfor %} 
         </tbody>
     </table>
     
