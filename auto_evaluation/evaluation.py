@@ -71,11 +71,12 @@ class BaseEvaluator(object):
 class BinaryClassEvaluator(BaseEvaluator):
 	html = ''
 	stats = {}
+	tabs = {}
 	def __init__(self, Ytrue, Yfit, threshold=0.5):
 		self.fit(Ytrue, Yfit, threshold=threshold)
 		#print(self.stats['graphs'])
 		self.report()
-		self.html = to_html(self.stats)
+		self.html = to_html(self.stats,self.tabs)
 
 	def _repr_html_(self):
 		#print(self.html)
@@ -120,6 +121,7 @@ class BinaryClassEvaluator(BaseEvaluator):
 		print(self.summary())
 		# print(self.get_thresholds_table())
 		self.aggregate_plots()
+		self.get_tabs()
 		
 	def set_threshold(self, threshold):
 		"""
@@ -308,6 +310,7 @@ class BinaryClassEvaluator(BaseEvaluator):
 		ax.set_title('Metric Scores by Threshold')
 
 	def summary(self):
+		# TODO: Remove this function. we don't need this anymore
 		"""
 		Return most common metrics and other summary information for the evaluation
 
@@ -339,6 +342,18 @@ class BinaryClassEvaluator(BaseEvaluator):
 		stats['n'] = self.Ytrue.shape[0]
 		stats['threshold'] = self.threshold
 		self.stats = stats
+
+	def get_tabs(self):
+		fig, ax = plt.subplots()
+		self.plot_confusion_matrix(ax)
+		segment_tab = self.segment().to_html()
+		threshold_tab = self.get_thresholds_table().to_html()
+		confusion_tab = to_string(fig)
+		self.tabs['Segment']=segment_tab
+		self.tabs['Threshold Table']=threshold_tab
+		self.tabs['Confusion Matrix']=confusion_tab
+
+
 
 
 class MultiClassEvaluator(BaseEvaluator):

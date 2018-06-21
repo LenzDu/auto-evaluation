@@ -5,6 +5,10 @@
 </div>
 <div class="tab-folder">
     {% for key, value in values.items() %}
-    <div id="{{key}}" class="tab-content">{{value}}</div>
+    {% if 'base64' in value %}
+        <img id="{{key}}" class="tab-content" src="{{ value }}"></img>
+    {% else %}
+        <div id="{{key}}" class="tab-content">{{value}}</div>
+    {% endif %}
     {% endfor %} 
 </div>
