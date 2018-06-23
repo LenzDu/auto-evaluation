@@ -119,7 +119,6 @@ class BinaryClassEvaluator(BaseEvaluator):
 		"""
 		self.get_stats()
 		print(self.summary())
-		# print(self.get_thresholds_table())
 		self.aggregate_plots()
 		self.get_tabs()
 		
@@ -143,11 +142,9 @@ class BinaryClassEvaluator(BaseEvaluator):
 		self.p_r_curve(axes.flat[0])
 		self.roc_curve(axes.flat[1])
 		self.stacked_hist(axes.flat[2])
-		# self.plot_confusion_matrix(axes.flat[3], normalize=True)
 		self.plot_threshold_trend(axes.flat[3])
 		plt.show()
 		self.stats['graphs']=to_string(fig)
-		#print(self.stats['graphs'])
 
 
 	@plotting
