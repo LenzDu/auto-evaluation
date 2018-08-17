@@ -7,7 +7,7 @@ A python package to generate reports and provide comprehensive functions for mod
 * *(In the future)* Integrate with sklearn models and support cross validation
 
 ## Usage
-[This notebook](https://github.com/LenzDu/auto-evaluation/blob/du/examples/binary.ipynb) shows some basic usage of this package.
+[This notebook](https://github.com/LenzDu/auto-evaluation/tree/master/examples/binary.ipynb) shows some basic usage of this package.
 
 ## Installation
 Clone the git repo, navigate into the repo directory and use pip to install.
