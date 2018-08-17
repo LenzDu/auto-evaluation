@@ -1,0 +1,12 @@
+----------------------------------------------------
+Record Time: 2018-08-16 22:43:57.665368
+Precision: 0.636 
+Recall: 0.364 
+F1 score: 0.463 
+Accuracy: 0.748 
+ROC AUC: 0.761 
+Log Loss: 0.515 
+Proportion of Positive Labels: 0.299 
+Number of Observations: 100000 
+Threshold 0.500 
+Note:example
