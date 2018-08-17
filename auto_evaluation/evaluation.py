@@ -7,10 +7,11 @@ import itertools
 from datetime import datetime
 import warnings
 from collections import Counter
+from IPython.display import HTML
 
 import auto_evaluation.templates as templates
 from .reports import to_html
-from auto_evaluation.plot import to_string
+from .plot import to_string
 
 def plotting(plot_func):
 	'''
@@ -76,12 +77,12 @@ class BinaryClassEvaluator(BaseEvaluator):
 	def __init__(self, Ytrue, Yfit, threshold=0.5):
 		self.fit(Ytrue, Yfit, threshold=threshold)
 		#print(self.stats['graphs'])
-		self.report()
-		self.html = to_html(self.stats,self.tabs)
+		# self.report()
+		# self.html = to_html(self.stats, self.tabs)
 
-	def _repr_html_(self):
-		#print(self.html)
-		return self.html
+	# def _repr_html_(self):
+	# 	#print(self.html)
+	# 	return self.html
 
 	def fit(self, Ytrue, Yfit, threshold=0.5):
 		"""
@@ -119,10 +120,12 @@ class BinaryClassEvaluator(BaseEvaluator):
 		Provide a report for the evaluation
 		"""
 		self.get_stats()
-		print(self.summary())
-		# print(self.get_thresholds_table())
 		self.aggregate_plots()
+		# print(self.summary())
+		# print(self.get_thresholds_table())
 		self.get_tabs()
+		self.html = to_html(self.stats, self.tabs)
+		return HTML(self.html)
 		
 	def set_threshold(self, threshold):
 		"""
@@ -146,7 +149,7 @@ class BinaryClassEvaluator(BaseEvaluator):
 		self.stacked_hist(axes.flat[2])
 		# self.plot_confusion_matrix(axes.flat[3], normalize=True)
 		self.plot_threshold_trend(axes.flat[3])
-		plt.show()
+		# plt.show()
 		self.stats['graphs']=to_string(fig)
 		#print(self.stats['graphs'])
 
@@ -354,8 +357,6 @@ class BinaryClassEvaluator(BaseEvaluator):
 		self.tabs['Confusion Matrix']=confusion_tab
 
 
-
-
 class MultiClassEvaluator(BaseEvaluator):
 	def __init__(self, Ytrue, Yfit, class_names=None):
 		self.fit(Ytrue, Yfit, class_names=class_names)
@@ -389,7 +390,7 @@ class MultiClassEvaluator(BaseEvaluator):
 		# self.stacked_hist(axes.flat[2])
 		# self.plot_confusion_matrix(axes.flat[3], normalize=True)
 		# self.plot_threshold_trend(axes.flat[3])
-		plt.show()
+		# plt.show()
 		self.stats['graphs']=to_string(fig)
 		#print(self.stats['graphs'])	
 

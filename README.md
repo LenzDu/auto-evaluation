@@ -5,3 +5,11 @@ A python package to generate reports and provide comprehensive functions for mod
 * Provide documenting functions to save your model results
 * Segmentations based on your predictions for binary classification task
 * *(In the future)* Integrate with sklearn models and support cross validation
+
+## Usage
+[This notebook](www.google.com) shows some basic usage of this package.
+
+## Installation
+Clone the git repo, navigate into the repo directory and use pip to install.
+
+    pip install .
